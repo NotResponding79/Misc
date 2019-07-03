@@ -519,11 +519,11 @@ function vers() {
 }
 
 function al() {
-  echo -e "{BRed}pxe$NC=PXE,File server, backup server"
-  echo -e "{BRed}ii$NC=Get current host related info."
-  echo -e "{BRed}IP$NC=Returns IP/s of the server."
-  echo -e "{BRed}extract$NC=Extracts compressed files."
-  echo -e "{BRed}vers$NC=List Script version."
+  echo -e "${BRed}pxe$NC=PXE,File server, backup server"
+  echo -e "${BRed}ii$NC=Get current host related info."
+  echo -e "${BRed}IP$NC=Returns IP/s of the server."
+  echo -e "${BRed}extract$NC=Extracts compressed files."
+  echo -e "${BRed}vers$NC=List Script version."
 }
 
 ## creates and configures .bash_logout
