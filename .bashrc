@@ -1,10 +1,5 @@
 # .bashrc
 
-# version 06182019.1100
-# ~/.bashrc: executed by bash(1) for non-login shells.
-# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
-# for examples
-
 # Source global definitions
 if [ -f /etc/bashrc ]; then
   source /etc/bashrc
@@ -16,32 +11,81 @@ case $- in
       *) return;;
 esac
 
-# don't put duplicate lines or lines starting with space in the history.
-# See bash(1) for more options
-HISTCONTROL=ignoreboth
+vers="07/03/2019.1000.gov"
+un="jacksonb"
+sshkey="sshkey"
 
-# append to the history file, don't overwrite it
-shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
-
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
-shopt -s checkwinsize
-
-# If set, the pattern "**" used in a pathname expansion context will
-# match all files and zero or more directories and subdirectories.
-#shopt -s globstar
-
-# make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-
-# set variable identifying the chroot you work in (used in the prompt below)
-if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
-    debian_chroot=$(cat /etc/debian_chroot)
+#--------------------------------------------------------------
+#  Automatic setting of $DISPLAY (if not set already).
+#  This works for me - your mileage may vary. . . .
+#  The problem is that different types of terminals give
+#+ different answers to 'who am i' (rxvt in particular can be
+#+ troublesome) - however this code seems to work in a majority
+#+ of cases.
+#--------------------------------------------------------------
+function get_xserver ()
+{
+        case $TERM in
+        xterm )
+                XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
+                # Ane-Pieter Wieringa suggests the following alternative:
+                #  I_AM=$(who am i)
+                #  SERVER=${I_AM#*(}
+                #  SERVER=${SERVER%*)}
+                XSERVER=${XSERVER%%:*}
+                ;;
+                aterm | rxvt)
+                # Find some code that works here. ...
+                ;;
+        esac
+}
+if [ -z ${DISPLAY:=""} ]; then
+        get_xserver
+        if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
+        ${XSERVER} == "unix" ]]; then
+        DISPLAY=":0.0"          # Display on local host.
+        else
+        DISPLAY=${XSERVER}:0.0  # Display on remote host.
+        fi
 fi
+export DISPLAY
+#-------------------------------------------------------------
+# Greeting, motd etc. ...
+#-------------------------------------------------------------
+# Color definitions (taken from Color Bash Prompt HowTo).
+# Some colors might look different of some terminals.
+# For example, I see 'Bold Red' as 'orange' on my screen,
+# hence the 'Green' 'BRed' 'Red' sequence I often use in my prompt.
+
+# Normal Colors
+Black='\e[0;30m'        # Black
+Red='\e[0;31m'          # Red
+Green='\e[0;32m'        # Green
+Yellow='\e[0;33m'       # Yellow
+Blue='\e[0;34m'         # Blue
+Purple='\e[0;35m'       # Purple
+Cyan='\e[0;36m'         # Cyan
+White='\e[0;37m'        # White
+# Bold
+BBlack='\e[1;30m'       # Black
+BRed='\e[1;31m'         # Red
+BGreen='\e[1;32m'       # Green
+BYellow='\e[1;33m'      # Yellow
+BBlue='\e[1;34m'        # Blue
+BPurple='\e[1;35m'      # Purple
+BCyan='\e[1;36m'        # Cyan
+BWhite='\e[1;37m'       # White
+# Background
+On_Black='\e[40m'       # Black
+On_Red='\e[41m'         # Red
+On_Green='\e[42m'       # Green
+On_Yellow='\e[43m'      # Yellow
+On_Blue='\e[44m'        # Blue
+On_Purple='\e[45m'      # Purple
+On_Cyan='\e[46m'        # Cyan
+On_White='\e[47m'       # White
+NC="\e[m"               # Color Reset
+ALERT=${BWhite}${On_Red} # Bold White on red background
 
 # set a fancy prompt (non-color, unless we know we "want" color)
 case "$TERM" in
@@ -128,87 +172,42 @@ if ! shopt -oq posix; then
   fi
 fi
 
+HNs=$(hostname -s)
 
-#--------------------------------------------------------------
-#  Automatic setting of $DISPLAY (if not set already).
-#  This works for me - your mileage may vary. . . .
-#  The problem is that different types of terminals give
-#+ different answers to 'who am i' (rxvt in particular can be
-#+ troublesome) - however this code seems to work in a majority
-#+ of cases.
-#--------------------------------------------------------------
-function get_xserver ()
-{
-        case $TERM in
-        xterm )
-                XSERVER=$(who am i | awk '{print $NF}' | tr -d ')''(' )
-                # Ane-Pieter Wieringa suggests the following alternative:
-                #  I_AM=$(who am i)
-                #  SERVER=${I_AM#*(}
-                #  SERVER=${SERVER%*)}
-                XSERVER=${XSERVER%%:*}
-                ;;
-                aterm | rxvt)
-                # Find some code that works here. ...
-                ;;
-        esac
-}
-if [ -z ${DISPLAY:=""} ]; then
-        get_xserver
-        if [[ -z ${XSERVER}  || ${XSERVER} == $(hostname) ||
-        ${XSERVER} == "unix" ]]; then
-        DISPLAY=":0.0"          # Display on local host.
-        else
-        DISPLAY=${XSERVER}:0.0  # Display on remote host.
-        fi
-fi
-export DISPLAY
-#-------------------------------------------------------------
-# Greeting, motd etc. ...
-#-------------------------------------------------------------
-# Color definitions (taken from Color Bash Prompt HowTo).
-# Some colors might look different of some terminals.
-# For example, I see 'Bold Red' as 'orange' on my screen,
-# hence the 'Green' 'BRed' 'Red' sequence I often use in my prompt.
+case "$HNs" in
+    *pxe*)
+     IPADDR=$(ip addr show dev eth0 | grep 'inet' | awk '{print $2}' | cut -d\/ -f1)
+     ;;
+     
+     *)
+     IPADDR=$(hostname -I)
+     ;;
+esac
+PREFIX=$(echo "${IPADDR}" | awk -F\. '{print $1 "." $2 "." $3}')
 
-# Normal Colors
-Black='\e[0;30m'        # Black
-Red='\e[0;31m'          # Red
-Green='\e[0;32m'        # Green
-Yellow='\e[0;33m'       # Yellow
-Blue='\e[0;34m'         # Blue
-Purple='\e[0;35m'       # Purple
-Cyan='\e[0;36m'         # Cyan
-White='\e[0;37m'        # White
-# Bold
-BBlack='\e[1;30m'       # Black
-BRed='\e[1;31m'         # Red
-BGreen='\e[1;32m'       # Green
-BYellow='\e[1;33m'      # Yellow
-BBlue='\e[1;34m'        # Blue
-BPurple='\e[1;35m'      # Purple
-BCyan='\e[1;36m'        # Cyan
-BWhite='\e[1;37m'       # White
-# Background
-On_Black='\e[40m'       # Black
-On_Red='\e[41m'         # Red
-On_Green='\e[42m'       # Green
-On_Yellow='\e[43m'      # Yellow
-On_Blue='\e[44m'        # Blue
-On_Purple='\e[45m'      # Purple
-On_Cyan='\e[46m'        # Cyan
-On_White='\e[47m'       # White
-NC="\e[m"               # Color Reset
-ALERT=${BWhite}${On_Red} # Bold White on red background
+#case "${PREFIX}" in
+#  '192.168.0'|192.168.5")
+#    UNC='g42'
+#    LOC='cmr'
+#    Code='FOUR'
+#    InfraPrefix='192.168.0'
+#    Site='42'
+#    HostPrefix='svcpgr'
+#    BASEDN="dc=${UNC},dc=microsoft,dc=com"
+#    SUFFIX="microsoft.com"
+#    DOMAIN='${UNC}.${SUFFIX}'
+#    ;;
+#esac
 
-IPADDR=$(hostname -I)
-#PUBLIC_IP=`wget http://ipecho.net/plain -O - -q ; echo`
 echo -e "${BCyan}This is BASH ${BRed}${BASH_VERSION%.*}${BCyan}\
 - DISPLAY on ${BRed}$DISPLAY${NC}\n"
 date
 echo -ne "Up Time:";uptime | awk /'up/'
 echo -e "\nYou are logged on $NC" ; hostname
 echo -e "${BCyan}Server IP/s is ${BRed}${IPADDR}"
+echo -e "${BWhite}Script Version is $vers${NC}"
+echo -e "${BCyan}Type {"al"} to see quick shortcuts${NC}"
+
 function _exit()                # Function to run upon exit of shell.
 {
         echo -e "${BRed}Hasta la vista, baby${NC}"
@@ -352,6 +351,21 @@ export HISTIGNORE="&:bg:fg:ll:h"
 export HISTTIMEFORMAT="$(echo -e ${BCyan})[%d/%m %H:%M:%S]$(echo -e ${NC}) "
 export HISTCONTROL=ignoredups
 export HOSTFILE=$HOME/.hosts    # Put a list of remote hosts in ~/.hosts
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
 #-------------------
 # Personnal Aliases
 #-------------------
@@ -363,9 +377,10 @@ alias mount='mount | column -t'
 alias wget='wget -c'
 alias suroot='sudo -E su -p'
 alias cp='rsync -aP'
-#alias mv='rsync --partial --progress --append --rsh=ssh -r -h --remove-sent-files'
-
-### Server Alias ###q
+alias ssh='ssh -CX -i ~/.ssh/${sshkey}'
+alias netstat='netstat -ape'
+alias ssh-keygen='ssh-keygen -t rsa -b 4096'
+### Server Alias ###
 alias pxe='ssh -X -i ~/.ssh/pxe root@162.36.191.134'
 alias nas='ssh -X -i ~/.ssh/nas root@162.36.191.135'
 alias router='ssh -X -i ~/.ssh/pxe root@162.36.191.133'
@@ -406,34 +421,7 @@ function extract {
   done
  fi
 }
-# Adding Compress Function
-compress() {
- FILE=$1
- shift
- case $FILE in
-  *.tar.bz2) tar cjf $FILE $* ;;
-  *.tar.gz) tar czf $FILE $* ;;
-  *.tgz)  tar czf $FILE $* ;;
-  *.zip)  zip $FILE $*  ;;
-  *.rar)  rar $FILE $*  ;;
-  *)   echo "Filetype not recognized" ;;
- esac
-}
 
-# Adding up folder function
-up () {
- local d=""
- limit=$1
- for ((i=1 ; i <= limit ; i++))
-  do
-   d=$d/..
-  done
- d=$(echo $d | sed 's/^\///')
- if [ -z "$d" ]; then
-  d=..
- fi
- cd $d$
-}
 #-------------------------------------------------------------
 # The 'ls' family (this assumes you use a recent GNU ls).
 #-------------------------------------------------------------
@@ -491,9 +479,21 @@ function man()
         command man -a "$i"
         done
 }
-#-------------------------------------------------------------
-# Process/system related functions:
-#-------------------------------------------------------------
+
+# Adding up folder function
+up () {
+ local d=""
+ limit=$1
+ for ((i=1 ; i <= limit ; i++))
+  do
+   d=$d/..
+  done
+ d=$(echo $d | sed 's/^\///')
+ if [ -z "$d" ]; then
+  d=..
+ fi
+ cd $d$
+}
 
 function ii()   # Get current host related info.
 {
@@ -514,6 +514,13 @@ function IP() {
  echo -e "${BCyan}Public IP is ${BPurple}$PUBLIC_IP"
 }
 
+function vers() {
+  echo -e "${BWhite}Script Version is ${BRed}$vers${NC}"
+}
+
+function al() {
+  echo -e "{BRed}pxe$NC=PXE,Filer, backup server"
+}
 
 ## creates and configures .bash_logout
 
